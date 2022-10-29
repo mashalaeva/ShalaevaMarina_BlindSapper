@@ -1,0 +1,81 @@
+circles = {}
+used_x_indexes = {}
+used_y_indexes = {}
+delta = 71.68
+first_circle_spawn_x = 35.5
+first_circle_spawn_y = 829
+
+function init(self)
+	
+end
+
+function on_message(self, message_id, message, sender)
+	if message_id == hash("spawn") then	
+		for i = 1, #circles do
+			go.delete(circles[i])
+		end
+		circles = {}
+		used_x_indexes = {}
+		used_y_indexes = {}
+		spawn_circles()
+		should_show_circles_color(self, true)
+	elseif message_id == hash("color_to_gray") then	
+		should_show_circles_color(self, false)
+	end
+end
+
+function should_show_circles_color(self, should_show)
+	if should_show then
+		for i = 1, #circles do
+			msg.post(circles[i], "open_circle_game_beginning")
+		end
+	else
+		for i = 1, #circles do
+			msg.post(circles[i], "close_circle_game_beginning")
+		end
+	end
+end
+
+function circle_is_used(x, y)
+	flag = false
+	for i = 1, #used_x_indexes do
+		if x == used_x_indexes[i] and y == used_y_indexes[i] then
+			flag = true
+			return flag
+		end
+	end
+	return flag
+end
+
+function spawn_x_and_y(i, curr_color_is_red)
+	x = math.random(1, 10)
+	y = math.random(1, 10)
+	while circle_is_used(x, y) do
+		x = math.random(1, 10)
+		y = math.random(1, 10)
+	end
+
+	used_x_indexes[#used_x_indexes + 1] = x
+	used_y_indexes[#used_y_indexes + 1] = y
+	
+	pos_x = first_circle_spawn_x + ((x - 1) * delta)
+	pos_y = first_circle_spawn_y - ((y - 1) * delta)
+	pos_z = 1
+	
+	pos = vmath.vector3(pos_x, pos_y, pos_z)
+	
+	local currentId = factory.create("#factory", pos, nil, {color_is_red = curr_color_is_red, x = pos_x, y = pos_y}, 1)
+
+	circles[i] = currentId
+end
+
+function spawn_circles(self)
+	math.randomseed(os.time())
+	for i = 1, 50 do
+		spawn_x_and_y(i, true)
+	end
+	
+	for i = 51, 100 do
+		spawn_x_and_y(i, false)
+	end
+end

@@ -1,0 +1,81 @@
+function init(self)
+	msg.post(".", "acquire_input_focus")
+
+	self.startGameButton = gui.get_node("StartButton")
+	self.startGameText = gui.get_node("StartText")
+	self.spawnCirclesButton = gui.get_node("SpawnButton")
+	self.spawnCirclesText = gui.get_node("SpawnText")
+	self.score = gui.get_node("ScorePoints")
+	self.gameEndBackground = gui.get_node("GameEndBackground")
+	self.gameEndText = gui.get_node("GameEndText")
+end
+
+function on_message(self, message_id, message, sender)
+	if message_id == hash("game_finished") then
+		changeFinalTextVisibility(self, true, message.win, message.final_score)
+	elseif message_id == hash("score_changed") then
+		changeScore(self, message.new_score)
+	end
+end
+
+function on_input(self, action_id, action)
+	if (action_id == hash("touch") or action_id == hash("click")) and action.pressed and gui.pick_node(self.spawnCirclesButton, action.x, action.y) then
+
+		changeFinalTextVisibility(self, false, false, 0)
+		gui.set_enabled(self.startGameButton, true)
+		gui.set_enabled(self.startGameText, true)
+		gui.set_visible(self.startGameButton, true)
+		gui.set_visible(self.startGameText, true)
+		
+		if game_started then
+			changeScore(self, 0)
+			msg.post("/gameRules#gameMode", "respawn")
+		else 
+			gui.set_text(self.spawnCirclesText, "respawn")
+			msg.post("/gameRules#gameMode", "spawn")
+		end
+	end
+
+	if (action_id == hash("touch") or action_id == hash("click")) and action.pressed and gui.pick_node(self.startGameButton, action.x, action.y) then
+		gui.set_enabled(self.startGameButton, false)
+		gui.set_enabled(self.startGameText, false)
+		gui.set_visible(self.startGameButton, false)
+		gui.set_visible(self.startGameText, false)
+		msg.post("/gameRules#gameMode", "start")
+	end
+
+end
+
+function changeScore(self, newScore)
+	gui.set_text(self.score, newScore)
+end
+
+function changeFinalTextVisibility(self, isVisible, playerWin, score)
+
+	if isVisible then
+		local to_color = gui.get_color(self.gameEndBackground)
+		to_color.w = 1
+		gui.animate(self.gameEndBackground, gui.PROP_COLOR, to_color, gui.EASING_IN, 0,
+		0, nil)
+
+		if playerWin then
+			gui.set_text(self.gameEndText, "You win!\nYour score is " .. score)
+		else 
+			gui.set_text(self.gameEndText, "Game is over!\nYour score is " .. score)
+		end
+		to_color = gui.get_color(self.gameEndText)
+		to_color.w = 1
+		gui.animate(self.gameEndText, gui.PROP_COLOR, to_color, gui.EASING_IN, 0,
+		0, nil)
+	else 
+		local to_color = gui.get_color(self.gameEndBackground)
+		to_color.w = 0
+		gui.animate(self.gameEndBackground, gui.PROP_COLOR, to_color, gui.EASING_IN, 0,
+		0, nil)
+
+		to_color = gui.get_color(self.gameEndText)
+		to_color.w = 0
+		gui.animate(self.gameEndText, gui.PROP_COLOR, to_color, gui.EASING_IN, 0,
+		0, nil)
+	end
+end
